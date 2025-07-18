@@ -1,0 +1,37 @@
+name: Secure Build and Scan
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Install Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Static Code Analysis (Semgrep)
+        uses: returntocorp/semgrep-action@v1
+
+      - name: Build Docker Image
+        run: docker build -t myapp:latest .
+
+      - name: Container Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DISABLE_VEX_NOTICE: true
+        with:
+          image-ref: 'myapp:latest'
+          format: 'table'
+          exit-code: '1'
+          severity: 'CRITICAL,HIGH'
