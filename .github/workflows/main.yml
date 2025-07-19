@@ -17,11 +17,21 @@ jobs:
         with:
           node-version: '18'
 
-      - name: Install dependencies
-      - run: rm -rf node_modules package-lock.json
-      - run: npm install
-      - run: trivy fs .
-        
+      - name: Clean and install dependencies
+        run: |
+          rm -rf node_modules package-lock.json
+          npm install
+
+      - name: File System Scan (Trivy)
+        uses: aquasecurity/trivy-action@master
+        env:
+          TRIVY_DISABLE_VEX_NOTICE: true
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'table'
+          exit-code: '1'
+          severity: 'HIGH,CRITICAL'
 
       - name: Static Code Analysis (Semgrep)
         uses: returntocorp/semgrep-action@v1
@@ -29,7 +39,7 @@ jobs:
       - name: Build Docker Image
         run: docker build -t myapp:latest .
 
-      - name: Container Scan (Trivy)
+      - name: Container Image Scan (Trivy)
         uses: aquasecurity/trivy-action@master
         env:
           TRIVY_DISABLE_VEX_NOTICE: true
